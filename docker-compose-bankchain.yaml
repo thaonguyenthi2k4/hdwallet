@@ -1,0 +1,210 @@
+networks:
+  bankchain-net:
+
+volumes:
+  orderer-data:
+  peer0banka-data:
+  peer1banka-data:
+  peer0bankb-data:
+  peer1bankb-data:
+
+services:
+
+  orderer.bankchain.com:
+    image: hyperledger/fabric-orderer:3.1
+    container_name: orderer.bankchain.com
+    hostname: orderer.bankchain.com
+    restart: unless-stopped
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - ORDERER_GENERAL_LISTENADDRESS=0.0.0.0
+      - ORDERER_GENERAL_LISTENPORT=7050
+      - ORDERER_GENERAL_LOCALMSPID=OrdererMSP
+      - ORDERER_GENERAL_LOCALMSPDIR=/var/hyperledger/orderer/msp
+
+      # TLS for clients (7050)
+      - ORDERER_GENERAL_TLS_ENABLED=true
+      - ORDERER_GENERAL_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+
+      # Raft cluster TLS
+      - ORDERER_GENERAL_CLUSTER_CLIENTCERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_GENERAL_CLUSTER_CLIENTPRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_GENERAL_CLUSTER_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+
+      # Participation API (no system channel)
+      - ORDERER_GENERAL_BOOTSTRAPMETHOD=none
+      - ORDERER_CHANNELPARTICIPATION_ENABLED=true
+
+      # Admin endpoint for osnadmin
+      - ORDERER_ADMIN_LISTENADDRESS=0.0.0.0:9443
+      - ORDERER_ADMIN_TLS_ENABLED=true
+      - ORDERER_ADMIN_TLS_PRIVATEKEY=/var/hyperledger/orderer/tls/server.key
+      - ORDERER_ADMIN_TLS_CERTIFICATE=/var/hyperledger/orderer/tls/server.crt
+      - ORDERER_ADMIN_TLS_ROOTCAS=[/var/hyperledger/orderer/tls/ca.crt]
+      - FABRIC_CFG_PATH=/etc/hyperledger/orderer-cfg
+      - ORDERER_OPERATIONS_LISTENADDRESS=0.0.0.0:9445
+      - ORDERER_CHANNELPARTICIPATION_MAXREQUESTBODYSIZE=104857600
+    working_dir: /var/hyperledger/orderer
+    command: orderer
+    volumes:
+      - ./dummy_fabric:/etc/hyperledger/fabric          # bind FILE để vô hiệu hoá path gây lỗi
+      - ./orderer-config:/etc/hyperledger/orderer-cfg 
+      - ./crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/msp:/var/hyperledger/orderer/msp
+      - ./crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls:/var/hyperledger/orderer/tls
+      - orderer-data:/var/hyperledger/production/orderer
+    networks:
+      - bankchain-net
+    ports:
+      - "7050:7050"
+      - "9443:9443"
+
+  peer0.banka.bankchain.com:
+    image: hyperledger/fabric-peer:3.1
+    container_name: peer0.banka.bankchain.com
+    restart: unless-stopped
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=bankchain-net
+      - CORE_PEER_ID=peer0.banka.bankchain.com
+      - CORE_PEER_ADDRESS=peer0.banka.bankchain.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.banka.bankchain.com:7051
+      - CORE_PEER_LOCALMSPID=BankAMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_STATEDATABASE=goleveldb
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/peer/tls/ca.crt
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./crypto-config/peerOrganizations/banka.bankchain.com/peers/peer0.banka.bankchain.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/banka.bankchain.com/peers/peer0.banka.bankchain.com/tls:/var/hyperledger/peer/tls
+      - peer0banka-data:/var/hyperledger/production
+    networks:
+      - bankchain-net
+
+  peer1.banka.bankchain.com:
+    image: hyperledger/fabric-peer:3.1
+    container_name: peer1.banka.bankchain.com
+    restart: unless-stopped
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=bankchain-net
+      - CORE_PEER_ID=peer1.banka.bankchain.com
+      - CORE_PEER_ADDRESS=peer1.banka.bankchain.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.banka.bankchain.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.banka.bankchain.com:7051
+      - CORE_PEER_LOCALMSPID=BankAMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_STATEDATABASE=goleveldb
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/peer/tls/ca.crt
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./crypto-config/peerOrganizations/banka.bankchain.com/peers/peer1.banka.bankchain.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/banka.bankchain.com/peers/peer1.banka.bankchain.com/tls:/var/hyperledger/peer/tls
+      - peer1banka-data:/var/hyperledger/production
+    networks:
+      - bankchain-net
+
+  peer0.bankb.bankchain.com:
+    image: hyperledger/fabric-peer:3.1
+    container_name: peer0.bankb.bankchain.com
+    restart: unless-stopped
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=bankchain-net
+      - CORE_PEER_ID=peer0.bankb.bankchain.com
+      - CORE_PEER_ADDRESS=peer0.bankb.bankchain.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer0.bankb.bankchain.com:7051
+      - CORE_PEER_LOCALMSPID=BankBMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_STATEDATABASE=goleveldb
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/peer/tls/ca.crt
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./crypto-config/peerOrganizations/bankb.bankchain.com/peers/peer0.bankb.bankchain.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/bankb.bankchain.com/peers/peer0.bankb.bankchain.com/tls:/var/hyperledger/peer/tls
+      - peer0bankb-data:/var/hyperledger/production
+    networks:
+      - bankchain-net
+
+  peer1.bankb.bankchain.com:
+    image: hyperledger/fabric-peer:3.1
+    container_name: peer1.bankb.bankchain.com
+    restart: unless-stopped
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      - CORE_VM_ENDPOINT=unix:///host/var/run/docker.sock
+      - CORE_VM_DOCKER_HOSTCONFIG_NETWORKMODE=bankchain-net
+      - CORE_PEER_ID=peer1.bankb.bankchain.com
+      - CORE_PEER_ADDRESS=peer1.bankb.bankchain.com:7051
+      - CORE_PEER_LISTENADDRESS=0.0.0.0:7051
+      - CORE_PEER_GOSSIP_EXTERNALENDPOINT=peer1.bankb.bankchain.com:7051
+      - CORE_PEER_GOSSIP_BOOTSTRAP=peer0.bankb.bankchain.com:7051
+      - CORE_PEER_LOCALMSPID=BankBMSP
+      - CORE_PEER_MSPCONFIGPATH=/var/hyperledger/peer/msp
+      - CORE_LEDGER_STATE_STATEDATABASE=goleveldb
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_CERT_FILE=/var/hyperledger/peer/tls/server.crt
+      - CORE_PEER_TLS_KEY_FILE=/var/hyperledger/peer/tls/server.key
+      - CORE_PEER_TLS_ROOTCERT_FILE=/var/hyperledger/peer/tls/ca.crt
+    command: peer node start
+    volumes:
+      - /var/run/docker.sock:/host/var/run/docker.sock
+      - ./crypto-config/peerOrganizations/bankb.bankchain.com/peers/peer1.bankb.bankchain.com/msp:/var/hyperledger/peer/msp
+      - ./crypto-config/peerOrganizations/bankb.bankchain.com/peers/peer1.bankb.bankchain.com/tls:/var/hyperledger/peer/tls
+      - peer1bankb-data:/var/hyperledger/production
+    networks:
+      - bankchain-net
+
+  # Minimal CLI container (based on fabric-peer) for running peer/osnadmin commands
+  cli:
+    image: hyperledger/fabric-peer:3.1
+    container_name: cli
+    tty: true
+    stdin_open: true
+    depends_on:
+      - orderer.bankchain.com
+      - peer0.banka.bankchain.com
+      - peer1.banka.bankchain.com
+      - peer0.bankb.bankchain.com
+      - peer1.bankb.bankchain.com
+    environment:
+      - FABRIC_LOGGING_SPEC=INFO
+      # peer CLI needs a core.yaml; the image has one here:
+      - FABRIC_CFG_PATH=/etc/hyperledger/fabric
+
+      # Default context → BankA peer0 (change envs to operate BankB)
+      - CORE_PEER_LOCALMSPID=BankAMSP
+      - CORE_PEER_ADDRESS=peer0.banka.bankchain.com:7051
+      - CORE_PEER_MSPCONFIGPATH=/opt/crypto/peerOrganizations/banka.bankchain.com/users/Admin@banka.bankchain.com/msp
+      - CORE_PEER_TLS_ENABLED=true
+      - CORE_PEER_TLS_ROOTCERT_FILE=/opt/crypto/peerOrganizations/banka.bankchain.com/peers/peer0.banka.bankchain.com/tls/ca.crt
+    working_dir: /opt/gopath/src/github.com/hyperledger/fabric/peer
+    command: /bin/bash
+    volumes:
+      - ../bin:/usr/local/bin 
+      - ./crypto-config:/opt/crypto
+      - ./channel-artifacts:/opt/channel-artifacts
+      # optional: mount host binaries so cli has osnadmin/configtxgen/etc.
+     
+    networks:
+      - bankchain-net
+

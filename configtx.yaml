@@ -1,0 +1,177 @@
+---
+# =====================  ORGANIZATIONS  =====================
+Organizations:
+
+  - &OrdererOrg
+    Name: OrdererMSP
+    ID: OrdererMSP
+    MSPDir: crypto-config/ordererOrganizations/bankchain.com/msp
+    Policies:
+      Readers:  { Type: Signature, Rule: "OR('OrdererMSP.member')" }
+      Writers:  { Type: Signature, Rule: "OR('OrdererMSP.member')" }
+      Admins:   { Type: Signature, Rule: "OR('OrdererMSP.admin')" }
+
+  - &BankA
+    Name: BankAMSP
+    ID: BankAMSP
+    MSPDir: crypto-config/peerOrganizations/banka.bankchain.com/msp
+    Policies:
+      Readers:      { Type: Signature, Rule: "OR('BankAMSP.member')" }
+      Writers:      { Type: Signature, Rule: "OR('BankAMSP.member')" }
+      Admins:       { Type: Signature, Rule: "OR('BankAMSP.admin')" }
+      Endorsement:  { Type: Signature, Rule: "OR('BankAMSP.peer')" }
+    AnchorPeers:
+      - Host: peer0.banka.bankchain.com
+        Port: 7051
+
+  - &BankB
+    Name: BankBMSP
+    ID: BankBMSP
+    MSPDir: crypto-config/peerOrganizations/bankb.bankchain.com/msp
+    Policies:
+      Readers:      { Type: Signature, Rule: "OR('BankBMSP.member')" }
+      Writers:      { Type: Signature, Rule: "OR('BankBMSP.member')" }
+      Admins:       { Type: Signature, Rule: "OR('BankBMSP.admin')" }
+      Endorsement:  { Type: Signature, Rule: "OR('BankBMSP.peer')" }
+    AnchorPeers:
+      - Host: peer0.bankb.bankchain.com
+        Port: 7051
+
+# =====================  GLOBAL CAPABILITIES  =====================
+Capabilities:
+  Channel:
+    V2_0: true
+  Orderer:
+    V2_0: true
+  Application:
+    V2_0: true
+
+# =====================  APPLICATION DEFAULTS  =====================
+Application:
+  Organizations: []
+  Policies:
+    Readers:               { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers:               { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins:                { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+    LifecycleEndorsement:  { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+    Endorsement:           { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+  Capabilities:
+    V2_0: true
+
+# =====================  ORDERER DEFAULTS (RAFT)  =====================
+Orderer:
+  OrdererType: etcdraft
+  Addresses:
+    - orderer.bankchain.com:7050
+  EtcdRaft:
+    Consenters:
+      - Host: orderer.bankchain.com
+        Port: 7050
+        ClientTLSCert: crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls/server.crt
+        ServerTLSCert: crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls/server.crt
+  BatchTimeout: 2s
+  BatchSize:
+    MaxMessageCount: 10
+    AbsoluteMaxBytes: 99 MB
+    PreferredMaxBytes: 512 KB
+  Policies:
+    Readers:          { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers:          { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins:           { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+    BlockValidation:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+  Capabilities:
+    V2_0: true
+  Organizations:
+    - *OrdererOrg
+
+# =====================  CHANNEL DEFAULTS  =====================
+Channel:
+  Policies:
+    Readers:  { Type: ImplicitMeta, Rule: "ANY Readers" }
+    Writers:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+    Admins:   { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+  Capabilities:
+    V2_0: true
+
+# =====================  PROFILES (NO SYSTEM CHANNEL)  =====================
+Profiles:
+
+  # Genesis profile (không có 'Consortiums' trong Fabric 3.x)
+  BankchainGenesis:
+    Policies:
+      Readers:  { Type: ImplicitMeta, Rule: "ANY Readers" }
+      Writers:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+      Admins:   { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+    Capabilities:
+      V2_0: true
+    Orderer:
+      OrdererType: etcdraft
+      Addresses:
+        - orderer.bankchain.com:7050
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.bankchain.com
+            Port: 7050
+            ClientTLSCert: crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls/server.crt
+            ServerTLSCert: crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls/server.crt
+      BatchTimeout: 2s
+      BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+      Policies:
+        Readers:          { Type: ImplicitMeta, Rule: "ANY Readers" }
+        Writers:          { Type: ImplicitMeta, Rule: "ANY Writers" }
+        Admins:           { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+        BlockValidation:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+      Capabilities:
+        V2_0: true
+      Organizations:
+        - *OrdererOrg
+
+  # Application channel profile (tạo channel block cho Participation API)
+  BankChannel:
+    Policies:
+      Readers:  { Type: ImplicitMeta, Rule: "ANY Readers" }
+      Writers:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+      Admins:   { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+    Capabilities:
+      V2_0: true
+    # Khai Orderer ngay trong profile kênh
+    Orderer:
+      OrdererType: etcdraft
+      Addresses:
+        - orderer.bankchain.com:7050
+      EtcdRaft:
+        Consenters:
+          - Host: orderer.bankchain.com
+            Port: 7050
+            ClientTLSCert: crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls/server.crt
+            ServerTLSCert: crypto-config/ordererOrganizations/bankchain.com/orderers/orderer.bankchain.com/tls/server.crt
+      BatchTimeout: 2s
+      BatchSize:
+        MaxMessageCount: 10
+        AbsoluteMaxBytes: 99 MB
+        PreferredMaxBytes: 512 KB
+      Policies:
+        Readers:          { Type: ImplicitMeta, Rule: "ANY Readers" }
+        Writers:          { Type: ImplicitMeta, Rule: "ANY Writers" }
+        Admins:           { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+        BlockValidation:  { Type: ImplicitMeta, Rule: "ANY Writers" }
+      Capabilities:
+        V2_0: true
+      Organizations:
+        - *OrdererOrg
+    Application:
+      Organizations:
+        - *BankA
+        - *BankB
+      Policies:
+        Readers:               { Type: ImplicitMeta, Rule: "ANY Readers" }
+        Writers:               { Type: ImplicitMeta, Rule: "ANY Writers" }
+        Admins:                { Type: ImplicitMeta, Rule: "MAJORITY Admins" }
+        LifecycleEndorsement:  { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+        Endorsement:           { Type: ImplicitMeta, Rule: "MAJORITY Endorsement" }
+      Capabilities:
+        V2_0: true
+

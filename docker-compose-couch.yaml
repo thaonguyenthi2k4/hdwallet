@@ -1,0 +1,63 @@
+version: "2.4"
+
+networks:
+  bankchain-net:
+
+services:
+
+  couchdb0:
+    image: couchdb:3.3
+    container_name: couchdb0
+    restart: unless-stopped
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    volumes:
+      - couchdb0-data:/opt/couchdb/data
+    # ports:     # mở nếu cần truy cập từ host
+    #   - "5984:5984"
+    networks:
+      - bankchain-net
+
+  couchdb1:
+    image: couchdb:3.3
+    container_name: couchdb1
+    restart: unless-stopped
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    volumes:
+      - couchdb1-data:/opt/couchdb/data
+    networks:
+      - bankchain-net
+
+  couchdb2:
+    image: couchdb:3.3
+    container_name: couchdb2
+    restart: unless-stopped
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    volumes:
+      - couchdb2-data:/opt/couchdb/data
+    networks:
+      - bankchain-net
+
+  couchdb3:
+    image: couchdb:3.3
+    container_name: couchdb3
+    restart: unless-stopped
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=adminpw
+    volumes:
+      - couchdb3-data:/opt/couchdb/data
+    networks:
+      - bankchain-net
+
+volumes:
+  couchdb0-data:
+  couchdb1-data:
+  couchdb2-data:
+  couchdb3-data:
+

@@ -1,0 +1,24 @@
+OrdererOrgs:
+  - Name: Orderer
+    Domain: bankchain.com
+    EnableNodeOUs: true
+    Specs:
+      - Hostname: orderer
+
+PeerOrgs:
+  - Name: BankA
+    Domain: banka.bankchain.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+    Users:
+      Count: 1
+
+  - Name: BankB
+    Domain: bankb.bankchain.com
+    EnableNodeOUs: true
+    Template:
+      Count: 2
+    Users:
+      Count: 1
+
