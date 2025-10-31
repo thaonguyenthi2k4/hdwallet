@@ -1,0 +1,19 @@
+{
+  "name": "bankchain-banka",
+  "version": "1.0.0",
+  "client": { "organization": "BankA" },
+  "organizations": {
+    "BankA": {
+      "mspid": "BankAMSP",
+      "certificateAuthorities": ["ca_peerbanka"]
+    }
+  },
+  "certificateAuthorities": {
+    "ca_peerbanka": {
+      "url": "http://localhost:7054",
+      "caName": "ca_peerbanka",
+      "httpOptions": { "verify": false }
+    }
+  }
+}
+

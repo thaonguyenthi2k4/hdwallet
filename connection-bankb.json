@@ -1,0 +1,19 @@
+{
+  "name": "bankchain-bankb",
+  "version": "1.0.0",
+  "client": { "organization": "BankB" },
+  "organizations": {
+    "BankB": {
+      "mspid": "BankBMSP",
+      "certificateAuthorities": ["ca_peerbankb"]
+    }
+  },
+  "certificateAuthorities": {
+    "ca_peerbankb": {
+      "url": "http://localhost:8054",
+      "caName": "ca_peerbankb",
+      "httpOptions": { "verify": false }
+    }
+  }
+}
+
